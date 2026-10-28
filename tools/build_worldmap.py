@@ -267,32 +267,45 @@ TRAVELER = {
     ],
 }
 
-CLAUDE = {
-    "idle": [
-        ".ooooooooooo.",
-        ".ooooooooooo.",
-        ".oKoooooooKo.",
-        "oooKoooooKooo",
-        "ooKoooooooKoo",
-        "ooooooooooooo",
-        ".ooooooooooo.",
-        ".ooooooooooo.",
-        "..o.o...o.o..",
-        "..o.o...o.o..",
-    ],
-    "step": [
-        ".ooooooooooo.",
-        ".ooooooooooo.",
-        ".oKoooooooKo.",
-        "oooKoooooKooo",
-        "ooKoooooooKoo",
-        "ooooooooooooo",
-        ".ooooooooooo.",
-        ".ooooooooooo.",
-        "..o.o...o.o..",
-        "....o.....o..",
-    ],
+# Claude is assembled from parts: (col, row) offsets from the body's top-left,
+# body = cols 1-11 x rows 0-7, arms beside it, legs on rows 8-9.
+CLAUDE_EYES = {
+    "happy": [(2, 2), (3, 3), (2, 4), (10, 2), (9, 3), (10, 4)],   # > <
+    "dot": [(3, 2), (3, 3), (9, 2), (9, 3)],
+    "blink": [(2, 3), (3, 3), (9, 3), (10, 3)],
+    "left": [(2, 2), (2, 3), (8, 2), (8, 3)],
+    "right": [(4, 2), (4, 3), (10, 2), (10, 3)],
+    "wow": [(2, 2), (3, 2), (2, 3), (3, 3), (9, 2), (10, 2), (9, 3), (10, 3)],
 }
+_ARM_L, _ARM_R = [(0, 3), (0, 4), (0, 5)], [(12, 3), (12, 4), (12, 5)]
+_UP_L, _UP_R = [(0, -2), (0, -1), (0, 0)], [(12, -2), (12, -1), (12, 0)]
+CLAUDE_ARMS = {
+    "down": _ARM_L + _ARM_R,
+    "up": _UP_L + _UP_R,
+    "swingA": [(0, 2), (0, 3), (0, 4), (12, 4), (12, 5), (12, 6)],
+    "swingB": [(0, 4), (0, 5), (0, 6), (12, 2), (12, 3), (12, 4)],
+    "wave1": _UP_L + _ARM_R,                  # waves with the outer (left) arm
+    "wave2": [(0, 1), (-1, 0), (-1, -1)] + _ARM_R,
+}
+CLAUDE_LEGS = {
+    "stand": [(x, y) for x in (2, 4, 8, 10) for y in (8, 9)],
+    "stepA": [(2, 8), (2, 9), (8, 8), (8, 9), (4, 8), (10, 8)],
+    "stepB": [(4, 8), (4, 9), (10, 8), (10, 9), (2, 8), (8, 8)],
+}
+
+
+def claude_frame(eyes, arms, legs, bob):
+    c = Canvas()
+    ox, oy = 1, 3 - bob          # two spare rows on top for raised arms
+    c.rect(ox + 1, oy, 11, 8, "orange")
+    for x, y in CLAUDE_ARMS[arms] + CLAUDE_LEGS[legs]:
+        c.set(ox + x, oy + y, "orange")
+    for x, y in CLAUDE_EYES[eyes]:
+        c.set(ox + x, oy + y, "K")
+    if eyes == "wow":
+        c.set(ox + 2, oy + 2, "white")
+        c.set(ox + 9, oy + 2, "white")
+    return outlined(c)
 
 BUBBLE = [
     ".KKKKK.",
@@ -428,6 +441,42 @@ def claude_pos(t):
         return (door[0] + (land[0] - door[0]) * u,
                 door[1] + (land[1] - door[1]) * u - 9 * math.sin(math.pi * u))
     return pos_at(max(STOP_S[3] - GAP, traveler_s(t) - GAP))
+
+
+LEAVE_SENSES = ARRIVE[3] + PAUSE[3]
+
+
+def claude_pose(t, k, moving):
+    """(eyes, arms, legs, bob, hop) for Claude at time t."""
+    dt = t - JOIN
+    if dt < 0.35:
+        return "wow", "up", "stand", 0, 0                    # pops out of the lab
+    if dt < 1.15:
+        return "happy", "up", "stand", 0, 0                  # leaps over the traveler
+    if t < LEAVE_SENSES:
+        arms = "down" if dt < 1.3 else ("wave1" if (k // 4) % 2 else "wave2")
+        return "happy", arms, "stand", 0, 0
+    if moving:
+        legs, arms, bob = (("stepA", "swingA", 0), ("stand", "down", 1),
+                           ("stepB", "swingB", 0), ("stand", "down", 1))[(k // 3) % 4]
+        return ("blink" if k % 40 < 2 else "dot"), arms, legs, bob, 0
+    if ARRIVE[4] <= t < ARRIVE[5]:                           # waiting at the team hall
+        u = t - ARRIVE[4]
+        hop = 2 if 0.6 <= u < 0.75 else 0
+        eyes = "left" if u < 0.3 else ("right" if u < 0.6 else "dot")
+        return eyes, ("up" if hop else "down"), "stand", 0, hop
+    u = t - ARRIVE[5]                                        # at the edge of the fog
+    if u < 0.6:
+        return "right", "down", "stand", 0, 0
+    if u < 1.0:
+        return "wow", "down", "stand", 0, 0
+    if u < 2.4:
+        v = (u - 1.0) % 0.7
+        hop = round(3 * math.sin(math.pi * v / 0.35)) if v < 0.35 else 0
+        return "happy", ("up" if hop else "down"), "stand", 0, hop
+    if u < 3.4:
+        return "happy", ("wave1" if (k // 4) % 2 else "wave2"), "stand", 0, 0
+    return ("blink" if k % 40 < 2 else "dot"), "down", "stand", 0, 0
 
 
 def snap(x, y):
@@ -855,7 +904,9 @@ def decorate(c, rng, blocked):
 
 
 def characters(pal):
-    tf, cf = frames_for(TRAVELER), frames_for(CLAUDE)
+    tf = frames_for(TRAVELER)
+    rest = ("happy", "down", "stand", 0)
+    cf = {rest: claude_frame(*rest)}
     trav_pos, trav_frame, cl_pos, cl_frame, cl_vis = [], [], [], [], []
     prev_t = prev_c = None
     for k, t in enumerate(TICKS):
@@ -868,29 +919,32 @@ def characters(pal):
         if cp is None:
             cl_vis.append((t, 0))
             cl_pos.append((t, snap(NODES[3][0] + 1, NODES[3][1] - 4)))
-            cl_frame.append((t, "idle"))
+            cl_frame.append((t, rest))
             continue
-        cl_vis.append((t, 1 if t < FADE else 0))
-        cl_pos.append((t, snap(*cp)))
-        moving = prev_c is not None and snap(*cp) != snap(*prev_c)
-        cl_frame.append((t, ("step" if ((k + 1) // 3) % 2 else "bob") if moving else "idle"))
+        moving = prev_c is not None and math.dist(cp, prev_c) > 1e-6
         prev_c = cp
+        *look, hop = claude_pose(t, k, moving)
+        look = tuple(look)
+        cf.setdefault(look, claude_frame(*look))
+        cl_vis.append((t, 1 if t < FADE else 0))
+        cl_pos.append((t, snap(cp[0], cp[1] - hop)))
+        cl_frame.append((t, look))
 
-    def frames_svg(frames, seq, half_w, height):
+    def frames_svg(frames, seq, half_w, height, first):
         out = ""
         for name, fc in frames.items():
             ch = [(t, 1 if f == name else 0) for t, f in seq]
-            out += group(svg_paths(fc, pal), timeline("opacity", ch), opacity=1 if name == "idle" else 0)
+            out += group(svg_paths(fc, pal), timeline("opacity", ch), opacity=1 if name == first else 0)
         return group(out, transform=f"translate({-half_w * P} {-height * P})")
 
     fade = [(0, 0), (0.25, 0.5), (0.5, 1), (FADE, 0.6), (FADE + 0.25, 0.3), (FADE + 0.5, 0)]
-    trav = group(group(frames_svg(tf, trav_frame, 5.5, 14), timeline("opacity", fade), opacity=0),
+    trav = group(group(frames_svg(tf, trav_frame, 5.5, 14, "idle"), timeline("opacity", fade), opacity=0),
                  timeline("translate", trav_pos))
     bub = Canvas()
-    bub.sprite(BUBBLE, 4, -12)
+    bub.sprite(BUBBLE, 4, -10)
     bubble = group(svg_paths(bub, pal),
                    timeline("opacity", [(0, 0), (JOIN + 1.15, 1), (JOIN + 2.2, 0)]), opacity=0)
-    claude = group(group(frames_svg(cf, cl_frame, 7.5, 11) + group(bubble, transform=f"translate({-7.5 * P} {-11 * P})"),
+    claude = group(group(frames_svg(cf, cl_frame, 7.5, 13, rest) + group(bubble, transform=f"translate({-7.5 * P} {-13 * P})"),
                          timeline("opacity", cl_vis), opacity=0),
                    timeline("translate", cl_pos))
     return trav, claude, tf, cf
@@ -911,7 +965,7 @@ def hud(pal, tf, cf):
     q = Canvas()
     draw_text(q, "?", sx2 + 9, sy + 7, "sub", shadow=None)
     out += group(svg_paths(q, pal, unit=2), timeline("opacity", [(0, 1), (JOIN + 0.5, 0), (FADE + 0.5, 1)]))
-    mini = svg_paths(cf["idle"], pal, unit=2, ox=(sx2 + 3) * 2 + 2, oy=(sy + 5) * 2 + 2)
+    mini = svg_paths(cf[("happy", "down", "stand", 0)], pal, unit=2, ox=(sx2 + 3) * 2 + 2, oy=(sy + 5) * 2 - 2)
     out += group(mini, timeline("opacity", [(0, 0), (JOIN + 0.5, 1), (FADE + 0.5, 0)]), opacity=0)
     return out
 
