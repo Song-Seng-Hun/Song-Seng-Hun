@@ -1746,6 +1746,13 @@ def build_tile(kind):
         t.set(19, 14, "yellow")
         t.set(29, 14, "yellow")
         c.merge(outlined(t))
+    elif kind == "chip":
+        ch = Canvas()
+        ch.sprite(ICONS["chip"], 17, 12)
+        c.merge(outlined(ch))
+        led = Canvas()
+        led.set(27, 14, "green")
+        amb.append(group(svg_paths(led, pal), loop("opacity", 1.4, "1;0.15", "0;0.5")))
     elif kind == "voice":
         m = Canvas()
         m.sprite(MIC, 21, 11)
@@ -1783,7 +1790,7 @@ def main():
             notion.mkdir(exist_ok=True)
             (notion / "cover.svg").write_text(build_cover(svg))
             (notion / "icon.svg").write_text(build_icon())
-            for kind in ("vision", "robots", "trophy", "voice"):
+            for kind in ("vision", "robots", "trophy", "voice", "chip"):
                 (notion / f"tile-{kind}.svg").write_text(build_tile(kind))
             icons = notion / "icons"
             icons.mkdir(exist_ok=True)
