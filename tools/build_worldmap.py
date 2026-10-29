@@ -18,7 +18,7 @@ OUT = ROOT / "assets"
 
 P = 4                 # px per grid cell
 W, H = 240, 100       # grid size
-T = 24.0              # loop length in seconds
+T = 26.0              # loop length in seconds
 DT = 1 / 16           # timeline step in seconds
 FADE = T - 0.75       # everything resets from here
 
@@ -31,6 +31,8 @@ COMMON = {
     "green": "#6DBE73", "blue": "#5E8FD6", "red": "#E5566B",
     "dia": "#D8F3FF", "dia_d": "#8CC8E8", "nv": "#FF5A6E", "laser": "#6CFF8A",
     "white": "#F7F5EE",
+    "codex": "#6E9BF5", "codex_d": "#4C72D9", "screen": "#17203B", "glyph": "#9FE3FF",
+    "gem_b": "#4F8CF7", "gem_r": "#EA5A4F", "gem_y": "#F5C443", "gem_g": "#41B96A", "gem_c": "#E9F0FF",
 }
 
 PALETTES = {
@@ -80,6 +82,7 @@ CHARS = {
     "n": "pants", "s": "scarf", "o": "orange", "w": "white", "t": "teal",
     "d": "dia", "D": "dia_d", "y": "yellow", "m": "metal", "M": "metal_d",
     "l": "lit", "r": "red", "g": "green", "b": "blue", "x": "text", "u": "sub",
+    "B": "codex", "Q": "codex_d", "S": "screen",
 }
 
 # ---------------------------------------------------------------- canvas
@@ -307,6 +310,68 @@ def claude_frame(eyes, arms, legs, bob):
         c.set(ox + 9, oy + 2, "white")
     return outlined(c)
 
+
+CODEX_BODY = [
+    "...BBBBB...",
+    ".BBBBBBBBB.",
+    "BBSSSSSSSBB",
+    "BBSSSSSSSBQ",
+    "BBSSSSSSSBQ",
+    "BBSSSSSSSBQ",
+    "BBSSSSSSSBQ",
+    ".BBBBBBBBQ.",
+    "QBBBBBBBBBQ",
+    "..BBBBBBQ..",
+]
+CODEX_FACES = {                                   # drawn on the screen
+    "prompt": [(3, 3), (4, 4), (3, 5), (6, 5), (7, 5)],     # >_
+    "cursor_off": [(3, 3), (4, 4), (3, 5)],
+    "happy": [(2, 4), (3, 3), (4, 4), (6, 4), (7, 3), (8, 4)],   # ^ ^
+}
+CODEX_LEGS = {
+    "stand": [(3, 10), (3, 11), (7, 10), (7, 11)],
+    "stepA": [(3, 10), (3, 11), (7, 10)],
+    "stepB": [(3, 10), (7, 10), (7, 11)],
+}
+
+
+def codex_frame(face, legs, bob):
+    c = Canvas()
+    ox, oy = 1, 2 - bob
+    c.sprite(CODEX_BODY, ox, oy)
+    for x, y in CODEX_LEGS[legs]:
+        c.set(ox + x, oy + y, "codex")
+    for x, y in CODEX_FACES[face]:
+        c.set(ox + x, oy + y, "glyph")
+    return outlined(c)
+
+
+def gemini_frame(eyes, shine):
+    """Four-point star: blue top, green right, yellow bottom, red left."""
+    c = Canvas()
+    cx = cy = 7
+    cols = {-90: "gem_b", 0: "gem_g", 90: "gem_y", 180: "gem_r", -180: "gem_r"}
+    for dy in range(-6, 7):
+        for dx in range(-6, 7):
+            if abs(dx) ** 0.7 + abs(dy) ** 0.7 > 6 ** 0.7 + 1e-9:
+                continue
+            ang = math.degrees(math.atan2(dy, dx))
+            near = sorted(cols, key=lambda a: abs(a - ang))
+            col = cols[near[0]]
+            if abs(abs(near[0] - ang) - 45) < 12 and (dx + dy) % 2:
+                col = cols[near[1]]                          # dither across the seams
+            if abs(dx) + abs(dy) <= (2 if shine else 1):
+                col = "white" if shine else "gem_c"
+            c.set(cx + dx, cy + dy, col)
+    if shine:
+        for dx, dy in ((0, -6), (0, 6), (-6, 0), (6, 0), (0, -5), (0, 5), (-5, 0), (5, 0)):
+            c.set(cx + dx, cy + dy, "white")
+    for ex in (-2, 2):
+        c.set(cx + ex, cy, "K")
+        if eyes == "dot":
+            c.set(cx + ex, cy - 1, "K")
+    return outlined(c)
+
 BUBBLE = [
     ".KKKKK.",
     "KwwwwwK",
@@ -393,9 +458,9 @@ def pos_at(s):
 # ---------------------------------------------------------------- timeline
 
 
-GAP = 12                          # Claude walks this far behind
-STOP = [0, 0, 0, -8, 0, 0]        # stand a little left of the senses lab door
-PAUSE = {1: 0.9, 2: 0.9, 3: 2.8, 4: 0.9}
+GAP = 13                          # Claude walks this far behind; Codex and Gemini 14 more each
+STOP = [0, 0, 0, -8, 0, 16]       # left of the senses lab door; last stop inside the fog
+PAUSE = {1: 0.9, 2: 0.9, 3: 2.8, 4: 2.6}
 START_HOLD = 1.4
 END_ARRIVE = T - 5.5
 
@@ -460,11 +525,16 @@ def claude_pose(t, k, moving):
         legs, arms, bob = (("stepA", "swingA", 0), ("stand", "down", 1),
                            ("stepB", "swingB", 0), ("stand", "down", 1))[(k // 3) % 4]
         return ("blink" if k % 40 < 2 else "dot"), arms, legs, bob, 0
-    if ARRIVE[4] <= t < ARRIVE[5]:                           # waiting at the team hall
+    if ARRIVE[4] <= t < ARRIVE[5]:                           # the team hall: watches the others join
         u = t - ARRIVE[4]
-        hop = 2 if 0.6 <= u < 0.75 else 0
-        eyes = "left" if u < 0.3 else ("right" if u < 0.6 else "dot")
-        return eyes, ("up" if hop else "down"), "stand", 0, hop
+        if u < 0.6:
+            return "right", "down", "stand", 0, 0
+        if u < 1.6:
+            return "left", "down", "stand", 0, 0
+        if u < 2.2:
+            hop = 2 if u < 1.75 else 0
+            return "happy", ("up" if hop else ("wave1" if (k // 4) % 2 else "wave2")), "stand", 0, hop
+        return ("blink" if k % 40 < 2 else "dot"), "down", "stand", 0, 0
     u = t - ARRIVE[5]                                        # at the edge of the fog
     if u < 0.6:
         return "right", "down", "stand", 0, 0
@@ -477,6 +547,72 @@ def claude_pose(t, k, moving):
     if u < 3.4:
         return "happy", ("wave1" if (k // 4) % 2 else "wave2"), "stand", 0, 0
     return ("blink" if k % 40 < 2 else "dot"), "down", "stand", 0, 0
+
+
+# The rest of the party waits at the team hall: Codex beside it, Gemini
+# floating by the left tower. When the traveler arrives they fall in behind.
+HALL = ARRIVE[4]
+LEAVE_HALL = HALL + PAUSE[4]
+CODEX_WAIT = (NODES[4][0] + 13, NODES[4][1] - 3)
+GEMINI_WAIT = (NODES[4][0] - 13, NODES[4][1] - 16)
+
+
+def follower_pos(back, wait, t_leap, leap_dur, peak, t):
+    land_s = STOP_S[4] - back
+    if t < t_leap:
+        return wait
+    land = pos_at(land_s)
+    if t < t_leap + leap_dur:
+        u = (t - t_leap) / leap_dur
+        return (wait[0] + (land[0] - wait[0]) * u,
+                wait[1] + (land[1] - wait[1]) * u - peak * math.sin(math.pi * u))
+    return pos_at(max(land_s, traveler_s(t) - back))
+
+
+def codex_pos(t):
+    return follower_pos(GAP + 14, CODEX_WAIT, HALL + 0.6, 0.8, 14, t)
+
+
+def gemini_pos(t):
+    """Floats over the party at the hall, then drifts down to the back of the line."""
+    u = min(1.0, max(0.0, (t - LEAVE_HALL) / 3.0))
+    back, lift = GAP + 7 + 21 * u, 12 * (1 - u)
+    if t < HALL + 1.0:
+        x, y = GEMINI_WAIT
+    else:
+        x, y = pos_at(max(STOP_S[4] - back, traveler_s(t) - back))
+        y -= lift
+        if t < HALL + 2.0:
+            v = t - HALL - 1.0
+            x = GEMINI_WAIT[0] + (x - GEMINI_WAIT[0]) * v
+            y = GEMINI_WAIT[1] + (y - GEMINI_WAIT[1]) * v - 4 * math.sin(math.pi * v)
+    return x, y - 3 - math.sin(2 * math.pi * t / 1.4)        # always hovering
+
+
+def codex_pose(t, k, moving):
+    """(face, legs, bob, hop) for Codex at time t."""
+    idle = "prompt" if (k // 8) % 2 else "cursor_off"         # blinking cursor
+    if t < HALL + 0.2:
+        return idle, "stand", 0, 0
+    if t < HALL + 1.4:                                        # cheers, then leaps to the back
+        return "happy", "stand", 0, (2 if HALL + 0.3 <= t < HALL + 0.45 else 0)
+    if t < LEAVE_HALL:
+        return ("happy" if t < HALL + 2.0 else idle), "stand", 0, 0
+    if moving:
+        legs, bob = (("stepA", 0), ("stand", 1), ("stepB", 0), ("stand", 1))[((k + 2) // 3) % 4]
+        return "prompt", legs, bob, 0
+    u = t - ARRIVE[5]
+    if 1.15 <= u < 2.55:
+        v = (u - 1.15) % 0.7
+        return "happy", "stand", 0, (round(3 * math.sin(math.pi * v / 0.35)) if v < 0.35 else 0)
+    return idle, "stand", 0, 0
+
+
+def gemini_pose(t, k):
+    """(eyes, shine) for Gemini at time t."""
+    u = t - ARRIVE[5]
+    shine = HALL + 0.2 <= t < HALL + 0.5 or k % 48 < 2 or (1.3 <= u < 2.7 and (k // 3) % 2 == 0)
+    return ("blink" if k % 56 in (20, 21) else "dot"), shine
 
 
 def snap(x, y):
@@ -771,7 +907,7 @@ def draw_sky(c, pal, theme, rng):
             for x in range(2 + (y1 % 2), W - 2, 2):
                 c.set(x, y1 - 1, bands[k + 1][1])
     # moon or sun
-    mx, my = 172, 12
+    mx, my = 150, 12
     for y in range(my - 5, my + 6):
         for x in range(mx - 5, mx + 6):
             d = (x - mx) ** 2 + (y - my) ** 2
@@ -787,7 +923,7 @@ def stars(pal, rng):
     static, twinkle = Canvas(), []
     for k in range(70):
         x, y = rng.randrange(4, W - 4), rng.randrange(3, 34)
-        if x < 80 and y < 16 or x > 190 and y < 18 or abs(x - 172) < 9 and abs(y - 12) < 9:
+        if x < 80 and y < 16 or x > 168 and y < 18 or abs(x - 150) < 9 and abs(y - 12) < 9:
             continue
         if k % 5 == 0:
             s = Canvas()
@@ -937,6 +1073,22 @@ def characters(pal):
             out += group(svg_paths(fc, pal), timeline("opacity", ch), opacity=1 if name == first else 0)
         return group(out, transform=f"translate({-half_w * P} {-height * P})")
 
+    co_pos, co_frame, ge_pos, ge_frame, cof, gef = [], [], [], [], {}, {}
+    prev_x = None
+    for k, t in enumerate(TICKS):
+        xp = codex_pos(t)
+        moving = prev_x is not None and math.dist(xp, prev_x) > 1e-6
+        prev_x = xp
+        *look, hop = codex_pose(t, k, moving)
+        look = tuple(look)
+        cof.setdefault(look, codex_frame(*look))
+        co_pos.append((t, snap(xp[0], xp[1] - hop)))
+        co_frame.append((t, look))
+        look = gemini_pose(t, k)
+        gef.setdefault(look, gemini_frame(*look))
+        ge_pos.append((t, snap(*gemini_pos(t))))
+        ge_frame.append((t, look))
+
     fade = [(0, 0), (0.25, 0.5), (0.5, 1), (FADE, 0.6), (FADE + 0.25, 0.3), (FADE + 0.5, 0)]
     trav = group(group(frames_svg(tf, trav_frame, 5.5, 14, "idle"), timeline("opacity", fade), opacity=0),
                  timeline("translate", trav_pos))
@@ -947,26 +1099,36 @@ def characters(pal):
     claude = group(group(frames_svg(cf, cl_frame, 7.5, 13, rest) + group(bubble, transform=f"translate({-7.5 * P} {-13 * P})"),
                          timeline("opacity", cl_vis), opacity=0),
                    timeline("translate", cl_pos))
-    return trav, claude, tf, cf
+    codex = group(group(frames_svg(cof, co_frame, 6.5, 14, co_frame[0][1]), timeline("opacity", fade), opacity=0),
+                  timeline("translate", co_pos))
+    gemini = group(group(frames_svg(gef, ge_frame, 7.5, 15, ge_frame[0][1]), timeline("opacity", fade), opacity=0),
+                   timeline("translate", ge_pos))
+    return trav + claude + codex + gemini, tf
 
 
-def hud(pal, tf, cf):
+def hud(pal, tf):
     c = Canvas()          # unit 2 px
-    sx1, sx2, sy = 426, 450, 8
-    draw_text(c, "PARTY", sx1 - 33, sy + 7, "text")
-    for sx in (sx1, sx2):
+    slots, sy = (378, 402, 426, 450), 8
+    draw_text(c, "PARTY", slots[0] - 33, sy + 7, "text")
+    for sx in slots:
         c.box(sx, sy, 22, 22, "panel")
         c.rect(sx + 1, sy + 1, 20, 1, "frame_d")
         c.rect(sx + 1, sy + 20, 20, 1, "frame_d")
         c.rect(sx + 1, sy + 1, 1, 20, "frame_d")
         c.rect(sx + 20, sy + 1, 1, 20, "frame_d")
     out = svg_paths(c, pal, unit=2)
-    out += group(svg_paths(tf["idle"], pal, unit=2, ox=(sx1 + 5) * 2 + 1, oy=(sy + 3) * 2 + 2))
-    q = Canvas()
-    draw_text(q, "?", sx2 + 9, sy + 7, "sub", shadow=None)
-    out += group(svg_paths(q, pal, unit=2), timeline("opacity", [(0, 1), (JOIN + 0.5, 0), (FADE + 0.5, 1)]))
-    mini = svg_paths(cf[("happy", "down", "stand", 0)], pal, unit=2, ox=(sx2 + 3) * 2 + 2, oy=(sy + 5) * 2 - 2)
-    out += group(mini, timeline("opacity", [(0, 0), (JOIN + 0.5, 1), (FADE + 0.5, 0)]), opacity=0)
+    out += svg_paths(tf["idle"], pal, unit=2, ox=(slots[0] + 5) * 2 + 1, oy=(sy + 3) * 2 + 2)
+    members = (
+        (claude_frame("happy", "down", "stand", 0), (slots[1] + 3) * 2 + 2, (sy + 5) * 2 - 2, JOIN + 0.5),
+        (codex_frame("happy", "stand", 0), slots[2] * 2 + 9, sy * 2 + 6, HALL + 0.7),
+        (gemini_frame("dot", False), slots[3] * 2 + 7, sy * 2 + 7, HALL + 1.1),
+    )
+    for (frame, ox, oy, t_on), sx in zip(members, slots[1:]):
+        q = Canvas()
+        draw_text(q, "?", sx + 9, sy + 7, "sub", shadow=None)
+        out += group(svg_paths(q, pal, unit=2), timeline("opacity", [(0, 1), (t_on, 0), (FADE + 0.5, 1)]))
+        out += group(svg_paths(frame, pal, unit=2, ox=ox, oy=oy),
+                     timeline("opacity", [(0, 0), (t_on, 1), (FADE + 0.5, 0)]), opacity=0)
     return out
 
 
@@ -1041,7 +1203,7 @@ def build(theme):
     title = Canvas()      # unit 3 px
     draw_text(title, "THE ROAD SO FAR", 9, 8, "text")
 
-    trav, claude, tf, cf = characters(pal)
+    party, tf = characters(pal)
 
     end = Canvas()        # unit 2 px
     msg = "TO BE CONTINUED"
@@ -1077,8 +1239,9 @@ def build(theme):
                         loop("", dur, f"{-30 * P} 0;{(W + 10) * P} 0", discrete=False, begin=begin, translate=True))
 
     desc = ("Pixel-art world map: a traveler walks from a physics lab past a robot workshop and a "
-            "vision data factory; at the senses lab the Claude mascot joins, and both head through "
-            "the AI team hall toward a fog-covered game village. To be continued.")
+            "vision data factory; the Claude mascot joins at the senses lab, the Codex mascot and the "
+            "Gemini star join at the AI team hall, and all four head into a fog-covered game village. "
+            "To be continued.")
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W * P} {H * P}" width="{W * P}" '
         f'height="{H * P}" shape-rendering="crispEdges" role="img" aria-labelledby="t d">'
@@ -1088,9 +1251,9 @@ def build(theme):
         f'<g clip-path="url(#in)">'
         + svg_paths(bg, pal) + "".join(twinkle) + clouds + svg_paths(land, pal)
         + "".join(amb) + lit_svg + svg_paths(labels, pal, unit=2)
-        + fog(pal, NODES[5][0], NODES[5][1] - 3) + trav + claude
+        + fog(pal, NODES[5][0], NODES[5][1] - 3) + party
         + "</g>"
-        + svg_paths(title, pal, unit=3) + hud(pal, tf, cf) + ending + svg_paths(frame, pal)
+        + svg_paths(title, pal, unit=3) + hud(pal, tf) + ending + svg_paths(frame, pal)
         + "</svg>\n"
     )
     return svg

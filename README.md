@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/worldmap-dark.svg">
-  <img src="assets/worldmap-light.svg" width="100%" alt="픽셀아트 월드맵. 여행자가 물리 연구소에서 출발해 로봇 공방과 비전 데이터 공장을 지나고, 감각 연구소에서 Claude가 합류해 AI 팀 본부를 거쳐 안개 낀 게임 마을로 향합니다.">
+  <img src="assets/worldmap-light.svg" width="100%" alt="픽셀아트 월드맵. 여행자가 물리 연구소에서 출발해 로봇 공방과 비전 데이터 공장을 지나고, 감각 연구소에서 Claude가, AI 팀 본부에서 Codex와 Gemini가 합류해 넷이 함께 안개 낀 게임 마을로 향합니다.">
 </picture>
 
 ### 물리에서 출발해 로봇과 비전 AI를 거쳐, 지금은 AI 팀과 함께 게임을 만들고 있습니다.
@@ -21,4 +21,4 @@
 **다뤄 본 것** Python · C++ · PyTorch · OpenCV · YOLO · EfficientNet · ROS · gRPC · FastAPI · Streamlit · Qt · Label Studio<br>
 **그리는 도구** Clip Studio Paint · After Effects · Reaper
 
-<sub>지도는 Claude가 픽셀 단위로 그렸습니다 ([tools/build_worldmap.py](tools/build_worldmap.py)). 주황색 동료는 Claude 마스코트 팬아트이며 Anthropic과는 관련이 없습니다.</sub>
+<sub>지도는 Claude가 픽셀 단위로 그렸습니다 ([tools/build_worldmap.py](tools/build_worldmap.py)).</sub>
