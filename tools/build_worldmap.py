@@ -1286,6 +1286,32 @@ def build_header(theme, label, icon):
             f'shape-rendering="crispEdges" role="img" aria-label="{label.title()}">'
             f'<title>{label.title()}</title>{svg_paths(c, pal, unit=3)}</svg>\n')
 
+ARROW = ["y..", "yy.", "yyy", "yy.", "y.."]
+
+
+def build_button(theme, label):
+    """A framed RPG menu button for links, with a nudging arrow."""
+    pal = PALETTES[theme]
+    w, h = 14 + text_width(label) + 11, 15
+    c = Canvas()
+    c.rect(1, 0, w - 2, h, "frame")
+    c.rect(0, 1, w, h - 2, "frame")
+    c.rect(2, 1, w - 4, h - 2, "panel")
+    c.rect(1, 2, w - 2, h - 4, "panel")
+    c.rect(2, h - 2, w - 4, 1, "frame_d")
+    ic = Canvas()
+    ic.sprite(HEADER_ICONS["log"], 3, 4)
+    c.merge(outlined(ic))
+    x = draw_text(c, label, 15, 4, "text") + 3
+    arrow = Canvas()
+    arrow.sprite(ARROW, x, 5)
+    nudge = loop("", 1.2, "0 0;3 0", "0;0.5", translate=True)
+    u = 3
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w * u} {h * u}" width="{w * u}" '
+            f'height="{h * u}" shape-rendering="crispEdges" role="img" aria-label="{label.title()}">'
+            f'<title>{label.title()}</title>{svg_paths(c, pal, unit=u)}'
+            f'{group(svg_paths(arrow, pal, unit=u), nudge)}</svg>\n')
+
 # ---------------------------------------------------------------- Notion portfolio art
 # Notion shows a cover as a wide band, so the cover is the map cropped to its middle.
 
@@ -1785,6 +1811,7 @@ def main():
         print(f"{path.relative_to(ROOT)}: {len(svg.encode()) / 1024:.1f} KB")
         for name, (label, icon) in HEADERS.items():
             (OUT / f"header-{name}-{theme}.svg").write_text(build_header(theme, label, icon))
+        (OUT / f"button-portfolio-{theme}.svg").write_text(build_button(theme, "PORTFOLIO"))
         if theme == "dark":
             notion = OUT / "notion"
             notion.mkdir(exist_ok=True)
