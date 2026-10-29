@@ -82,7 +82,7 @@ CHARS = {
     "n": "pants", "s": "scarf", "o": "orange", "w": "white", "t": "teal",
     "d": "dia", "D": "dia_d", "y": "yellow", "m": "metal", "M": "metal_d",
     "l": "lit", "r": "red", "g": "green", "b": "blue", "x": "text", "u": "sub",
-    "B": "codex", "Q": "codex_d", "S": "screen",
+    "B": "codex", "Q": "codex_d", "S": "screen", "W": "wood_d", "v": "wood",
 }
 
 # ---------------------------------------------------------------- canvas
@@ -1259,6 +1259,34 @@ def build(theme):
     return svg
 
 
+# ---------------------------------------------------------------- section headers
+
+HEADER_ICONS = {
+    "quest": [".yyy.", ".yyy.", ".yyy.", ".yyy.", "..y..", ".....", ".yyy."],     # quest marker !
+    "log": [".wwwwww.", "wuuuuuuw", "wwwwwwww", "wuuuuuww", "wwwwwwww", "wuuuuuuw", ".wwwwww."],
+    "bag": [".WWWWWWW.", "WvvvvvvvW", "WvvvlvvvW", "KKKKlKKKK", "WvvvvvvvW", "WvvvvvvvW", ".WWWWWWW."],
+}
+HEADERS = {"current-quest": ("CURRENT QUEST", "quest"), "quest-log": ("QUEST LOG", "log"),
+           "inventory": ("INVENTORY", "bag")}
+HEADER_W = 200        # in 3 px cells -> 600 px wide
+
+
+def build_header(theme, label, icon):
+    pal = PALETTES[theme]
+    c = Canvas()
+    ic = Canvas()
+    ic.sprite(HEADER_ICONS[icon], 1, 1)
+    c.merge(outlined(ic))
+    x = draw_text(c, label, 13, 2, "text") + 4
+    for i in range(x, HEADER_W - 1, 3):
+        c.set(i, 5, "sub")
+    w, h = HEADER_W * 3, 11 * 3
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
+            f'shape-rendering="crispEdges" role="img" aria-label="{label.title()}">'
+            f'<title>{label.title()}</title>{svg_paths(c, pal, unit=3)}</svg>\n')
+
+
+
 def main():
     OUT.mkdir(exist_ok=True)
     for theme in PALETTES:
@@ -1266,6 +1294,8 @@ def main():
         path = OUT / f"worldmap-{theme}.svg"
         path.write_text(svg)
         print(f"{path.relative_to(ROOT)}: {len(svg.encode()) / 1024:.1f} KB")
+        for name, (label, icon) in HEADERS.items():
+            (OUT / f"header-{name}-{theme}.svg").write_text(build_header(theme, label, icon))
 
 
 if __name__ == "__main__":
