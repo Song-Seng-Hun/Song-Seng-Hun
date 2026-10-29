@@ -6,6 +6,15 @@
 <h3 align="center">AI 팀을 꾸려 도구를 만들고, 그 팀과 함께 게임을 만들고 있습니다</h3>
 <p align="center"><sub>From physics through robots and vision AI — now running a team of AI agents and building a small game with it.</sub></p>
 
+<p align="center">
+  <a href="https://hilarious-muscari-8df.notion.site/Seunghun-Song-Portfolio-408f183740be81629c70e01092be4962">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/button-portfolio-dark.svg">
+      <img src="assets/button-portfolio-light.svg" alt="Portfolio (Notion)">
+    </picture>
+  </a>
+</p>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/header-current-quest-dark.svg">
   <img src="assets/header-current-quest-light.svg" alt="Current quest">
