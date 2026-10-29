@@ -1285,6 +1285,104 @@ def build_header(theme, label, icon):
             f'shape-rendering="crispEdges" role="img" aria-label="{label.title()}">'
             f'<title>{label.title()}</title>{svg_paths(c, pal, unit=3)}</svg>\n')
 
+# ---------------------------------------------------------------- Notion portfolio art
+# Notion shows a cover as a wide band, so the cover is the map cropped to its middle.
+
+TROPHY = [
+    "yyyyyyyyy",
+    "yllyyyyyy",
+    "yllyyyyyy",
+    ".yyyyyyy.",
+    "..yyyyy..",
+    "...yyy...",
+    "....y....",
+    "...yyy...",
+    "..MMMMM..",
+    ".MMMMMMM.",
+]
+MIC = [
+    "..mmmmm..",
+    ".mMmMmMm.",
+    ".mmMmMmm.",
+    ".mMmMmMm.",
+    ".mmmmmmm.",
+    "..mmmmm..",
+    "m...M...m",
+    "m...M...m",
+    ".m..M..m.",
+    "..mmMmm..",
+    "....M....",
+    "..MMMMM..",
+]
+TILE_W, TILE_H = 48, 30
+
+
+def build_cover(map_svg):
+    head = f'viewBox="0 0 {W * P} {H * P}" width="{W * P}" height="{H * P}"'
+    x, y, w, h = 2 * P, 28 * P, (W - 4) * P, 63 * P
+    return map_svg.replace(head, f'viewBox="{x} {y} {w} {h}" width="{w}" height="{h}"', 1)
+
+
+def build_icon():
+    pal = PALETTES["dark"]
+    f = frames_for(TRAVELER)["idle"]
+    u = 16
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {15 * u} {15 * u}" width="{15 * u}" '
+            f'height="{15 * u}" shape-rendering="crispEdges">{svg_paths(f, pal, unit=u, ox=2 * u)}</svg>\n')
+
+
+def build_tile(kind):
+    """A small night scene with one map building, for portfolio cards."""
+    pal = PALETTES["dark"]
+    rng = random.Random(kind)
+    c = Canvas()
+    for k, col in enumerate(("sky0", "sky1", "sky2", "sky3")):
+        c.rect(0, k * 5, TILE_W, 5, col)
+    for _ in range(14):
+        c.set(rng.randrange(TILE_W), rng.randrange(14), "star" if rng.random() < 0.6 else "star_d")
+    for x in range(TILE_W):
+        top = int(15 + 2 * math.sin(x / 5.0 + rng.random()))
+        c.rect(x, top, 1, 21 - top, "mtn_far")
+    c.rect(0, 20, TILE_W, TILE_H - 20, "g0")
+    for x in range(TILE_W):
+        if rng.random() < 0.5:
+            c.set(x, 19, "tuft")
+    for _ in range(40):
+        c.set(rng.randrange(TILE_W), rng.randrange(21, TILE_H), "g1")
+    c.rect(0, 26, TILE_W, 2, "path")
+    c.rect(0, 25, TILE_W, 1, "path_e")
+    c.rect(0, 28, TILE_W, 1, "path_e")
+    for x, y in ((5, 24), (42, 24)):
+        for (i, j), col in tree("round" if x < 20 else "pine").px.items():
+            c.px[(x + i, y + j)] = col
+    lit, amb = [], []
+    if kind == "trophy":
+        t = Canvas()
+        t.sprite(TROPHY, 20, 13)
+        t.set(19, 14, "yellow")
+        t.set(29, 14, "yellow")
+        c.merge(outlined(t))
+    elif kind == "voice":
+        m = Canvas()
+        m.sprite(MIC, 21, 11)
+        c.merge(outlined(m))
+        # sound bars on both sides, one frame visible at a time
+        frames = ((1, 3, 2), (2, 1, 3), (3, 2, 1), (2, 3, 1))
+        kt = ";".join(f"{j / len(frames):g}" for j in range(len(frames)))
+        for k, hs in enumerate(frames):
+            bars = Canvas()
+            for i, hgt in enumerate(hs):
+                for x in (18 - 2 * i, 32 + 2 * i):
+                    bars.rect(x, 16 - hgt, 1, 2 * hgt + 1, "teal")
+            vals = ";".join("1" if j == k else "0" for j in range(len(frames)))
+            amb.append(group(svg_paths(bars, pal), loop("opacity", 1.6, vals, kt), opacity=0 if k else 1))
+    else:
+        {"vision": region_vision, "robots": region_robots}[kind](c, lit, amb, pal, 25, 24)
+    for lc in lit:
+        c.merge(lc)
+    w, h = TILE_W * P, TILE_H * P
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w * 2}" height="{h * 2}" '
+            f'shape-rendering="crispEdges">{svg_paths(c, pal)}{"".join(amb)}</svg>\n')
 
 
 def main():
@@ -1296,6 +1394,13 @@ def main():
         print(f"{path.relative_to(ROOT)}: {len(svg.encode()) / 1024:.1f} KB")
         for name, (label, icon) in HEADERS.items():
             (OUT / f"header-{name}-{theme}.svg").write_text(build_header(theme, label, icon))
+        if theme == "dark":
+            notion = OUT / "notion"
+            notion.mkdir(exist_ok=True)
+            (notion / "cover.svg").write_text(build_cover(svg))
+            (notion / "icon.svg").write_text(build_icon())
+            for kind in ("vision", "robots", "trophy", "voice"):
+                (notion / f"tile-{kind}.svg").write_text(build_tile(kind))
 
 
 if __name__ == "__main__":
