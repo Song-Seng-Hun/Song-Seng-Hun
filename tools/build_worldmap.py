@@ -1300,6 +1300,20 @@ TROPHY = [
     "..MMMMM..",
     ".MMMMMMM.",
 ]
+MIC = [
+    "..mmmmm..",
+    ".mMmMmMm.",
+    ".mmMmMmm.",
+    ".mMmMmMm.",
+    ".mmmmmmm.",
+    "..mmmmm..",
+    "m...M...m",
+    "m...M...m",
+    ".m..M..m.",
+    "..mmMmm..",
+    "....M....",
+    "..MMMMM..",
+]
 TILE_W, TILE_H = 48, 30
 
 
@@ -1348,6 +1362,20 @@ def build_tile(kind):
         t.set(19, 14, "yellow")
         t.set(29, 14, "yellow")
         c.merge(outlined(t))
+    elif kind == "voice":
+        m = Canvas()
+        m.sprite(MIC, 21, 11)
+        c.merge(outlined(m))
+        # sound bars on both sides, one frame visible at a time
+        frames = ((1, 3, 2), (2, 1, 3), (3, 2, 1), (2, 3, 1))
+        kt = ";".join(f"{j / len(frames):g}" for j in range(len(frames)))
+        for k, hs in enumerate(frames):
+            bars = Canvas()
+            for i, hgt in enumerate(hs):
+                for x in (18 - 2 * i, 32 + 2 * i):
+                    bars.rect(x, 16 - hgt, 1, 2 * hgt + 1, "teal")
+            vals = ";".join("1" if j == k else "0" for j in range(len(frames)))
+            amb.append(group(svg_paths(bars, pal), loop("opacity", 1.6, vals, kt), opacity=0 if k else 1))
     else:
         {"vision": region_vision, "robots": region_robots}[kind](c, lit, amb, pal, 25, 24)
     for lc in lit:
@@ -1371,7 +1399,7 @@ def main():
             notion.mkdir(exist_ok=True)
             (notion / "cover.svg").write_text(build_cover(svg))
             (notion / "icon.svg").write_text(build_icon())
-            for kind in ("vision", "robots", "trophy"):
+            for kind in ("vision", "robots", "trophy", "voice"):
                 (notion / f"tile-{kind}.svg").write_text(build_tile(kind))
 
 
