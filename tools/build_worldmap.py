@@ -3,7 +3,9 @@
 
 Run from anywhere:
     python3 tools/build_worldmap.py
-It writes assets/worldmap-dark.svg and assets/worldmap-light.svg.
+It writes assets/worldmap-dark.svg and assets/worldmap-light.svg, plus the
+section headers, the portfolio button, the Notion art and the LinkedIn banner
+(assets/linkedin/banner.svg; tools/render_banner.js turns it into the PNG).
 
 Everything is drawn on a 240x100 grid (4 px per cell) and animated with SMIL,
 which GitHub plays inside README images (scripts are stripped there).
@@ -1160,7 +1162,8 @@ def fog(pal, cx, by):
     return layers
 
 
-def build(theme):
+def build(theme, bare=False):
+    """The animated map; with bare=True only the clipped scene and the party HUD."""
     pal = PALETTES[theme]
     rng = random.Random(42)
     bg = Canvas()
@@ -1243,17 +1246,18 @@ def build(theme):
             "vision data factory; the Claude mascot joins at the senses lab, the Codex mascot and the "
             "Gemini star join at the AI team hall, and all four head into a fog-covered game village. "
             "To be continued.")
+    scene = (svg_paths(bg, pal) + "".join(twinkle) + clouds + svg_paths(land, pal)
+             + "".join(amb) + lit_svg + svg_paths(labels, pal, unit=2)
+             + fog(pal, NODES[5][0], NODES[5][1] - 3) + party)
+    if bare:
+        return scene, hud(pal, tf)
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W * P} {H * P}" width="{W * P}" '
         f'height="{H * P}" shape-rendering="crispEdges" role="img" aria-labelledby="t d">'
         f'<title id="t">The road so far</title><desc id="d">{desc}</desc>'
         f'<defs><clipPath id="in"><rect x="{2 * P}" y="{2 * P}" width="{(W - 4) * P}" '
         f'height="{(H - 4) * P}"/></clipPath></defs>'
-        f'<g clip-path="url(#in)">'
-        + svg_paths(bg, pal) + "".join(twinkle) + clouds + svg_paths(land, pal)
-        + "".join(amb) + lit_svg + svg_paths(labels, pal, unit=2)
-        + fog(pal, NODES[5][0], NODES[5][1] - 3) + party
-        + "</g>"
+        f'<g clip-path="url(#in)">' + scene + "</g>"
         + svg_paths(title, pal, unit=3) + hud(pal, tf) + ending + svg_paths(frame, pal)
         + "</svg>\n"
     )
@@ -1802,6 +1806,96 @@ def build_tile(kind):
             f'shape-rendering="crispEdges">{svg_paths(c, pal)}{"".join(amb)}</svg>\n')
 
 
+# ---------------------------------------------------------------- LinkedIn banner
+# LinkedIn wants 1584 x 396 and puts the profile photo over the lower left, so the
+# map sits on the right and its sky, ridges and grass carry on to the left edge.
+
+BANNER_W, BANNER_H = 396, 99      # in 4 px cells
+BANNER_DX = BANNER_W + 2 - W      # map x -> banner x; the map's right inner edge meets the banner's
+BANNER_STILL = 19.0               # seconds into the loop: the party of four on the road to the fog
+# text, unit px, x, y (in its units), colour; kept inside the ~1350 x 220 px middle that phones
+# show and above the photo, which covers about the first 360 px of the lower half on desktop
+BANNER_LINES = (("AI ENGINEER", 8, 15, 11, "text"), ("COMPUTER VISION - ROBOTICS", 4, 30, 40, "sub"))
+
+
+def build_banner():
+    pal = PALETTES["dark"]
+    rng = random.Random(1584)
+    c = Canvas()
+    bands = [(0, "sky0"), (11, "sky1"), (20, "sky2"), (28, "sky3"), (35, "sky4")]
+    for k, (y0, col) in enumerate(bands):
+        y1 = bands[k + 1][0] if k + 1 < len(bands) else 48
+        c.rect(0, y0, BANNER_W, y1 - y0, col)
+        if k + 1 < len(bands):
+            for x in range(y1 % 2, BANNER_W, 2):
+                c.set(x, y1 - 1, bands[k + 1][1])
+    for k in range(40):
+        x, y = rng.randrange(2, BANNER_DX), rng.randrange(2, 34)
+        if y >= 20 and x < 176:           # keep the lettering clear
+            continue
+        c.set(x, y, "star" if k % 3 else "star_d")
+    for x in range(BANNER_W):
+        mx = x - BANNER_DX
+        top = int(31 + 3.5 * math.sin(mx / 11.0) + 2.5 * math.sin(mx / 4.7 + 1.3) + 1.2 * math.sin(mx / 2.1))
+        c.rect(x, top, 1, 48 - top, "mtn_far")
+        c.set(x, top, "mtn_h")
+    for x in range(BANNER_W):
+        mx = x - BANNER_DX
+        top = int(39 + 2.5 * math.sin(mx / 8.0 + 2) + 1.5 * math.sin(mx / 3.3))
+        c.rect(x, top, 1, 48 - top, "mtn_near")
+    c.rect(0, 46, BANNER_W, BANNER_H - 46, "g0")
+    for x in range(BANNER_W):
+        if rng.random() < 0.55:
+            c.set(x, 45, "tuft")
+    for y in range(47, BANNER_H):
+        for x in range(BANNER_DX + 2):
+            r = rng.random()
+            if r < 0.06:
+                c.set(x, y, "g1")
+            elif r < 0.10:
+                c.set(x, y, "g2")
+    # the road comes in from behind the profile photo
+    road = set()
+    for y in range(76, 82):
+        for x in range(BANNER_DX + 2):
+            edge = y in (76, 81)
+            c.set(x, y, "path_e" if edge else ("path_h" if rng.random() < 0.08 else "path"))
+            road.add((x, y))
+    placed = []
+    for _ in range(400):
+        x, y = rng.randrange(4, BANNER_DX - 4), rng.randrange(54, BANNER_H - 2)
+        if any(abs(x - px) < 9 and abs(y - py) < 8 for px, py in placed):
+            continue
+        if any((i, j) in road for i in range(x - 5, x + 6) for j in range(y - 12, y + 3)):
+            continue
+        for (i, j), col in tree("pine" if rng.random() < 0.4 else "round").px.items():
+            c.px[(x + i, y + j)] = col
+        placed.append((x, y))
+        if len(placed) >= 9:
+            break
+    for _ in range(40):
+        x, y = rng.randrange(2, BANNER_DX), rng.randrange(48, BANNER_H - 1)
+        if (x, y) in road or c.px.get((x, y)) in ("K", "leaf", "leaf_d", "leaf_h", "trunk"):
+            continue
+        c.set(x, y, "flower1" if rng.random() < 0.5 else "flower2")
+
+    scene, party_hud = build("dark", bare=True)
+    lettering = ""
+    for text, u, x, y, col in BANNER_LINES:
+        t = Canvas()
+        draw_text(t, text, x, y, col)
+        lettering += svg_paths(t, pal, unit=u)
+    w, h, ox = BANNER_W * P, BANNER_H * P, BANNER_DX * P
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
+            f'shape-rendering="crispEdges" data-still="{BANNER_STILL}" role="img" aria-label="AI Engineer: '
+            f'computer vision, robotics, AI team. A pixel road from physics to a game village.">'
+            f'<defs><clipPath id="in"><rect x="{2 * P}" y="{2 * P}" width="{(W - 4) * P}" '
+            f'height="{(H - 4) * P}"/></clipPath></defs>'
+            f'{svg_paths(c, pal)}'
+            f'<g transform="translate({ox} 0)"><g clip-path="url(#in)">{scene}</g>{party_hud}</g>'
+            f'{lettering}</svg>\n')
+
+
 def main():
     OUT.mkdir(exist_ok=True)
     for theme in PALETTES:
@@ -1823,6 +1917,9 @@ def main():
             icons.mkdir(exist_ok=True)
             for name in ICONS:
                 (icons / f"{name}.svg").write_text(build_page_icon(name))
+            linkedin = OUT / "linkedin"
+            linkedin.mkdir(exist_ok=True)
+            (linkedin / "banner.svg").write_text(build_banner())
 
 
 if __name__ == "__main__":
