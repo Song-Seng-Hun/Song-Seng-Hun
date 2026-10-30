@@ -1,3 +1,5 @@
+<p align="center"><b>한국어</b> · <a href="README.en.md">English</a> · <a href="README.ja.md">日本語</a></p>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/worldmap-dark.svg">
   <img src="assets/worldmap-light.svg" width="100%" alt="픽셀아트 월드맵. 여행자가 물리 연구소에서 출발해 로봇 공방과 비전 데이터 공장을 지나고, 감각 연구소에서 Claude가, AI 팀 본부에서 Codex와 Gemini가 합류해 넷이 함께 안개 낀 게임 마을로 향합니다.">
