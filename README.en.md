@@ -64,7 +64,13 @@ In graduate school I studied temperature sensing with NV-center diamond through 
 <details>
 <summary><b>04 Sense Lab</b> · Eyes and ears for AI</summary>
 
-Tools that sort video into scene changes and motion, and music into beat, chords and lyrics, as reports AI can read. Both are being refined by testing them on real videos and songs. (private)
+**[LLM Video Lens](https://github.com/Song-Seng-Hun/llm_video_lens)** · a CLI tool that lets AI read the motion in a video (public)
+
+- For each shot it writes how the body, limbs and camera moved: direction, distance and ease. It also draws onion-skin pictures with the tracked trails.
+- Anything uncertain is left as "unknown" rather than guessed, and every line points back to source frame numbers.
+- It counts people first (`crowd`) and tracks several separately. Readers are told to check point placement in the pictures before reading the numbers.
+
+**Music analysis tool** · sorts music into beat, chords and lyrics as reports AI can read; being refined on real songs. (private)
 
 </details>
 
