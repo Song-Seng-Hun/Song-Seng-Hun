@@ -14,8 +14,10 @@ that show covers without animation.
 
 import math
 import random
+import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True     # importing the map tool should not leave tools/__pycache__ behind
 from build_worldmap import ICONS, PALETTES, TRAVELER, Canvas, frames_for, group, outlined, svg_paths, tree
 
 ROOT = Path(__file__).resolve().parent.parent
