@@ -1,8 +1,8 @@
-<p align="center"><a href="README.md">한국어</a> · <b>English</b> · <a href="README.ja.md">日本語</a></p>
+<p align="center"><a href="../README.md">한국어</a> · <b>English</b> · <a href="README.ja.md">日本語</a></p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/worldmap-dark.svg">
-  <img src="assets/worldmap-light.svg" width="100%" alt="Pixel-art world map: a traveler sets out from the physics lab, passes the robot workshop and the vision data factory; Claude joins at the sense lab, and Codex and Gemini at the AI team HQ; then the four head together towards a fog-covered game village.">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/worldmap-dark.svg">
+  <img src="../assets/worldmap-light.svg" width="100%" alt="Pixel-art world map: a traveler sets out from the physics lab, passes the robot workshop and the vision data factory; Claude joins at the sense lab, and Codex and Gemini at the AI team HQ; then the four head together towards a fog-covered game village.">
 </picture>
 
 <h3 align="center">I put together a team of AIs to build tools, and now I'm making a game with that team</h3>
@@ -11,15 +11,15 @@
 <p align="center">
   <a href="https://hilarious-muscari-8df.notion.site/Seunghun-Song-Portfolio-408f183740be81629c70e01092be4962">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="assets/button-portfolio-dark.svg">
-      <img src="assets/button-portfolio-light.svg" alt="Portfolio (Notion)">
+      <source media="(prefers-color-scheme: dark)" srcset="../assets/button-portfolio-dark.svg">
+      <img src="../assets/button-portfolio-light.svg" alt="Portfolio (Notion)">
     </picture>
   </a>
 </p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/header-current-quest-dark.svg">
-  <img src="assets/header-current-quest-light.svg" alt="Current quest">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/header-current-quest-dark.svg">
+  <img src="../assets/header-current-quest-light.svg" alt="Current quest">
 </picture>
 
 - **Running an AI team** · I run a workspace where Claude, Codex and Gemini share memory and work together. I design the team's roles and rules, set the direction and review the results.
@@ -27,8 +27,8 @@
 - **A small game** · The first game I'm making with this team. When it's finished, the fog on the map lifts.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/header-quest-log-dark.svg">
-  <img src="assets/header-quest-log-light.svg" alt="Quest log">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/header-quest-log-dark.svg">
+  <img src="../assets/header-quest-log-light.svg" alt="Quest log">
 </picture>
 
 <details>
@@ -89,8 +89,8 @@ A small game I'm making with the AI team. *To be continued.*
 </details>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/header-inventory-dark.svg">
-  <img src="assets/header-inventory-light.svg" alt="Inventory">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/header-inventory-dark.svg">
+  <img src="../assets/header-inventory-light.svg" alt="Inventory">
 </picture>
 
 | Area | Used |
@@ -103,4 +103,4 @@ A small game I'm making with the AI team. *To be continued.*
 I make drawings, motion and music myself, so I can judge and fix the assets AI makes.
 <!-- creative GIF: add when the user picks one of their own animated illustrations -->
 
-<sub>The map and the pixel titles were drawn by Claude ([tools/build_worldmap.py](tools/build_worldmap.py)).</sub>
+<sub>The map and the pixel titles were drawn by Claude ([tools/build_worldmap.py](../tools/build_worldmap.py)).</sub>
