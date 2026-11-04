@@ -97,7 +97,7 @@ AI 팀과 함께 만드는 작은 게임입니다. *To be continued.*
 |---|---|
 | 비전과 데이터 | PyTorch · EfficientNet · YOLO · OpenCV · Streamlit · Label Studio · FastAPI |
 | 로봇 | ROS · ROS2 · gRPC · Qt · Raspberry Pi Pico |
-| 언어 | Python · C++ · C |
+| 언어 | Python |
 | AI 협업 | Claude Code · Codex · Gemini |
 
 그림·모션·음악을 직접 만들어, AI가 만든 애셋을 판단하고 고칩니다.
