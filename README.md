@@ -1,4 +1,4 @@
-<p align="center"><b>한국어</b> · <a href="README.en.md">English</a> · <a href="README.ja.md">日本語</a></p>
+<p align="center"><b>한국어</b> · <a href="docs/README.en.md">English</a> · <a href="docs/README.ja.md">日本語</a></p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/worldmap-dark.svg">

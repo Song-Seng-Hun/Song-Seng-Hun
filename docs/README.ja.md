@@ -1,8 +1,8 @@
-<p align="center"><a href="README.md">한국어</a> · <a href="README.en.md">English</a> · <b>日本語</b></p>
+<p align="center"><a href="../README.md">한국어</a> · <a href="README.en.md">English</a> · <b>日本語</b></p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/worldmap-dark.svg">
-  <img src="assets/worldmap-light.svg" width="100%" alt="ピクセルアートの世界地図。旅人が物理研究所を出発し、ロボット工房とビジョンデータ工場を通り過ぎ、感覚研究所で Claude が、AI チーム本部で Codex と Gemini が仲間に加わって、4 人で霧に包まれたゲームの村へ向かいます。">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/worldmap-dark.svg">
+  <img src="../assets/worldmap-light.svg" width="100%" alt="ピクセルアートの世界地図。旅人が物理研究所を出発し、ロボット工房とビジョンデータ工場を通り過ぎ、感覚研究所で Claude が、AI チーム本部で Codex と Gemini が仲間に加わって、4 人で霧に包まれたゲームの村へ向かいます。">
 </picture>
 
 <h3 align="center">AI のチームを組んでツールを作り、そのチームと一緒にゲームを作っています</h3>
@@ -11,15 +11,15 @@
 <p align="center">
   <a href="https://hilarious-muscari-8df.notion.site/Seunghun-Song-Portfolio-408f183740be81629c70e01092be4962">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="assets/button-portfolio-dark.svg">
-      <img src="assets/button-portfolio-light.svg" alt="Portfolio (Notion)">
+      <source media="(prefers-color-scheme: dark)" srcset="../assets/button-portfolio-dark.svg">
+      <img src="../assets/button-portfolio-light.svg" alt="Portfolio (Notion)">
     </picture>
   </a>
 </p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/header-current-quest-dark.svg">
-  <img src="assets/header-current-quest-light.svg" alt="Current quest">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/header-current-quest-dark.svg">
+  <img src="../assets/header-current-quest-light.svg" alt="Current quest">
 </picture>
 
 - **AI チームの運営** · Claude、Codex、Gemini が記憶を共有しながら一緒に働く作業環境を運営しています。チームの役割とルールを設計し、方向を決めて結果をレビューします。
@@ -27,8 +27,8 @@
 - **小さなゲーム** · このチームと一緒に作る最初のゲームです。完成すると地図の霧が晴れます。
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/header-quest-log-dark.svg">
-  <img src="assets/header-quest-log-light.svg" alt="Quest log">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/header-quest-log-dark.svg">
+  <img src="../assets/header-quest-log-light.svg" alt="Quest log">
 </picture>
 
 <details>
@@ -89,8 +89,8 @@ AI チームと一緒に作っている小さなゲームです。*To be continu
 </details>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/header-inventory-dark.svg">
-  <img src="assets/header-inventory-light.svg" alt="Inventory">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/header-inventory-dark.svg">
+  <img src="../assets/header-inventory-light.svg" alt="Inventory">
 </picture>
 
 | 分野 | 使ったもの |
@@ -103,4 +103,4 @@ AI チームと一緒に作っている小さなゲームです。*To be continu
 絵・モーション・音楽を自分で作っているので、AI が作ったアセットを判断して直せます。
 <!-- creative GIF: add when the user picks one of their own animated illustrations -->
 
-<sub>地図とピクセルのタイトルは Claude が描きました（[tools/build_worldmap.py](tools/build_worldmap.py)）。</sub>
+<sub>地図とピクセルのタイトルは Claude が描きました（[tools/build_worldmap.py](../tools/build_worldmap.py)）。</sub>
