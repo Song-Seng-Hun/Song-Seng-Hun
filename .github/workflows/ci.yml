@@ -1,0 +1,44 @@
+name: CI
+
+# The SVGs in assets/ are generated. This check fails when a generator and the
+# committed pictures drift apart, or when an SVG is not well-formed XML.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Regenerate the SVGs
+        run: |
+          python tools/build_worldmap.py
+          python tools/build_notion_covers.py
+      - name: Committed SVGs match the generators
+        run: |
+          git status --porcelain
+          git diff --stat --exit-code
+          test -z "$(git status --porcelain)"
+      - name: Every SVG is well-formed XML
+        run: |
+          python - <<'EOF'
+          import pathlib, xml.dom.minidom
+          files = sorted(pathlib.Path("assets").rglob("*.svg"))
+          for f in files:
+              xml.dom.minidom.parse(str(f))
+          print(f"{len(files)} SVG files parsed")
+          EOF
