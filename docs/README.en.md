@@ -70,7 +70,11 @@ In graduate school I studied temperature sensing with NV-center diamond through 
 - Anything uncertain is left as "unknown" rather than guessed, and every line points back to source frame numbers.
 - It counts people first (`crowd`) and tracks several separately. Readers are told to check point placement in the pictures before reading the numbers.
 
-**Music analysis tool** · sorts music into beat, chords and lyrics as reports AI can read; being refined on real songs. (private)
+**[LLM Music Lens](https://github.com/Song-Seng-Hun/llm_music_lens)** · an analysis tool that lets AI read music with evidence (public)
+
+- Most AI agents can't hear, so when asked to "compose something that feels like this song" they guess from the title or genre. I built this to fill that gap.
+- Give it a song and it writes a text score with times: BPM and beats, chords and key, sections, melody, bass and drum notes, and word-level lyric timing.
+- You can check the result against the original with piano-roll images and an ear-check file that plays the original in one ear and the result in the other.
 
 </details>
 
