@@ -18,8 +18,8 @@ import sys
 from pathlib import Path
 
 sys.dont_write_bytecode = True     # importing the map tool should not leave tools/__pycache__ behind
-from build_worldmap import (ICONS, PALETTES, TRAVELER, Canvas, claude_frame, codex_frame, frames_for, group,
-                            outlined, svg_paths, tree)
+from build_worldmap import (CLAUDE_ARMS, CLAUDE_EYES, CLAUDE_LEGS, FONT, ICONS, PALETTES, TRAVELER, Canvas,
+                            claude_frame, codex_frame, draw_text, frames_for, group, outlined, svg_paths, tree)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "notion" / "covers"
@@ -368,6 +368,41 @@ def easel(c, x, y, w, h, fill="panel"):
     for lx in (x + 2, x + w - 4):
         c.rect(lx, y + h + 1, 2, HORIZON + 6 - (y + h + 1), "wood_d")
     return x + 1, y + 1, w - 2, h - 2
+
+
+def half_text(text, x, y, col):
+    """Map-font text at half-cell size with its top-left at cell (x, y), as SVG."""
+    c = Canvas()
+    draw_text(c, text, round(x * 2), round(y * 2), col, shadow=None)
+    return svg_paths(c, PAL, unit=2)
+
+
+def speaker(c, x):
+    """A speaker cabinet with its left edge at x and feet on row 46; the woofer's centre is (x + 9, 25)."""
+    c.box(x, 16, 18, 31, "wall_d")
+    c.rect(x + 1, 17, 16, 1, "wall_m")
+    glow_disc(c, x + 9, 25, 5, "K")
+    glow_disc(c, x + 9, 25, 3, "win")
+    c.set(x + 9, 25, "metal_d")
+    glow_disc(c, x + 9, 38, 3, "K")
+    glow_disc(c, x + 9, 38, 1, "win")
+
+
+def claude_dj(eyes, arms, bob):
+    """Claude in headphones (as in the llm_music_lens banner)."""
+    c = Canvas()
+    ox, oy = 1, 3 - bob
+    c.rect(ox + 1, oy, 11, 8, "orange")
+    for px, py in CLAUDE_ARMS[arms] + CLAUDE_LEGS["stand"]:
+        c.set(ox + px, oy + py, "orange")
+    for px, py in CLAUDE_EYES[eyes]:
+        c.set(ox + px, oy + py, "K")
+    c.rect(ox + 2, oy - 2, 9, 1, "metal_d")
+    c.set(ox + 1, oy - 1, "metal_d")
+    c.set(ox + 11, oy - 1, "metal_d")
+    for cx in (ox - 1, ox + 12):
+        c.rect(cx, oy + 1, 2, 3, "wall_d")
+    return outlined(c)
 
 
 def wrist_path(keys, step):
@@ -1314,6 +1349,100 @@ def scene_korean_stt():
 
 
 
+FONT.setdefault("m", "..... ..... ##.#. #.#.# #.#.# #.#.# #.#.#".split())   # for the chord Am
+# melody (start beat, beats, row) and one bass note per bar, as in the llm_music_lens banner
+MELODY = [(0, 1, 8), (1, 1, 6), (2, 2, 4), (4, 1, 7), (5, 1, 9), (6, 2, 6), (8, 1, 5), (9, 1, 4),
+          (10, 2, 3), (12, 1, 6), (13, 1, 5), (14, 2, 7)]
+BASS = [(0, 4, 12), (4, 4, 13), (8, 4, 11), (12, 4, 10)]
+CHORDS = ["C", "Am", "F", "G"]
+
+
+def scene_music_lens():
+    """LLM Music Lens: a speaker plays into a monitor whose playhead lights a piano roll at 120 BPM."""
+    beat, start, beats = 0.5, 1.0, 16
+    end = start + beats * beat
+    dur = end + 0.5
+    s = Scene("music-lens", dur, keep_clear=(48, 196))
+    c = s.base
+    x0, bw = 82, 4
+    bx = lambda k: x0 + k * bw
+    mel_y = lambda r: 18 + (r - 3) * 2
+    c.box(78, 10, 72, 30, "metal_d")
+    c.rect(80, 12, 68, 26, "screen")
+    for k in range(beats + 1):                        # beat grid, brighter on bar lines
+        for y in range(18, 36):
+            c.set(bx(k), y, "win" if k % 4 else "sub")
+    c.rect(80, 17, 68, 1, "win")
+    c.rect(111, 40, 6, 4, "metal_d")
+    c.box(104, 43, 20, 2, "metal")
+    for st, ln, r in MELODY:                          # the roll before it is played
+        c.rect(bx(st) + 1, mel_y(r), ln * bw - 1, 2, "win")
+    for st, ln, r in BASS:
+        c.rect(bx(st) + 2, 33, ln * bw - 3, 2, "win")
+    sx = 54
+    speaker(c, sx)
+    for k in range(beats):                            # the speaker pulses and sends arcs to the monitor
+        t = start + k * beat
+        pulse = Canvas()
+        for dx, dy in ((-6, 0), (6, 0), (0, -6), (0, 6)):
+            pulse.set(sx + 9 + dx, 25 + dy, "lit")
+        s.show(pulse, [(t, t + 0.2)])
+        for j, r in enumerate((2, 4)):
+            a = Canvas()
+            for i in range(-r // 2 - 1, r // 2 + 2):
+                if i % 2 == 0:
+                    a.set(sx + 19 + r - abs(i) // 2, 25 + i, "glyph")
+            s.show(a, [(t + 0.08 * j, t + 0.08 * j + 0.18)])
+    # notes light up as the playhead passes them and stay lit; the first frame shows the played roll
+    for st, ln, r in MELODY:
+        t = start + st * beat
+        f = Canvas()
+        f.rect(bx(st) + 1, mel_y(r), ln * bw - 1, 2, "flower1")
+        s.show(f, [(0.0, 0.75), (t, dur)])
+        h = Canvas()
+        h.rect(bx(st) + 1, mel_y(r), ln * bw - 1, 2, "white")
+        s.show(h, [(t, t + 0.15)])
+    for st, ln, r in BASS:
+        f = Canvas()
+        f.rect(bx(st) + 2, 33, ln * bw - 3, 2, "codex")
+        s.show(f, [(0.0, 0.75), (start + st * beat, dur)])
+    for k in range(beats):
+        t = start + k * beat
+        tick = Canvas()
+        tick.rect(bx(k), 36, 1 if k % 4 else 2, 1, "lit")
+        s.show(tick, [(t, t + 0.2)])
+    for b, name in enumerate(CHORDS):                 # each chord is bright during its bar
+        t0 = start + 4 * b * beat
+        for col, spans in (("lit", [(t0, t0 + 4 * beat)]), ("sub", [(0.0, 0.75), (t0 + 4 * beat, dur)])):
+            s.layers.append(shown_inner(dur, half_text(name, bx(4 * b) + 1.5, 12.5, col), spans, raw=True))
+    head = Canvas()
+    head.rect(0, 18, 1, 19, "red")
+    s.move(head, [(0.0, start, (x0, 0), (x0, 0), "lin"), (start, end, (x0, 0), (bx(beats), 0), "lin"),
+                  (end, dur, (bx(beats), 0), (bx(beats), 0), "lin")], spans=[(start, end)])
+    # Claude nods on every beat in headphones; Codex's cursor taps along
+    rest = on_ground(claude_dj("dot", "down", 0), 156, 47)
+    up, down = on_ground(claude_dj("happy", "down", 1), 156, 47), on_ground(claude_dj("happy", "down", 0), 156, 47)
+    keys = [(0.0, rest)]
+    for k in range(beats):
+        t = start + k * beat
+        keys += [(t, up), (t + beat / 2, down)]
+    s.timeline(keys + [(end, rest)])
+    prompt = on_ground(codex_frame("prompt", "stand", 0), 174, 47)
+    off = on_ground(codex_frame("cursor_off", "stand", 1), 174, 47)
+    s.flip([prompt, off], start, end, beat / 2)
+    s.show(prompt, [(0.0, start), (end, dur)])
+    shadow = Canvas()                                 # the owner stands in front of the monitor's corner
+    shadow.rect(80, 47, 12, 1, "g2")
+    shadow.rect(81, 48, 10, 1, "g2")
+    s.layers.append(paths(shadow))
+    s.layers.append(paths(traveler(81, 47)))
+    return s.svg("LLM Music Lens",
+                 "Pixel-art night scene: a speaker pulses on every beat and sends small sound arcs into a monitor "
+                 "that shows a piano roll; a red playhead sweeps across at 120 BPM, beat ticks flash, notes light "
+                 "up as it passes and the chords C, Am, F and G appear bar by bar. The portfolio owner stands in "
+                 "front of the monitor; Claude nods along in headphones and Codex taps the beat.")
+
+
 def scene_notes():
     """Study notes: a desk under a lamp beside a small library, with lines being written in a notebook."""
     s = Scene("notes", 6.0, trees=False)
@@ -1594,6 +1723,7 @@ SCENES = {
     "personal-llm": scene_personal_llm,
     "competitions": scene_competitions,
     "korean-stt": scene_korean_stt,
+    "llm-music-lens": scene_music_lens,
     "notes": scene_notes,
     "notes-quality": scene_quality,
     "notes-supervised": scene_supervised,
