@@ -1708,6 +1708,19 @@ ICONS = {
         "..rrrrrrrrr...",
         "...rrr.rrr....",
     ],
+    "duck": [
+        "....www.....",
+        "...wwwww....",
+        "...wwKwwoo..",
+        "...mmmmm....",
+        "....www.....",
+        ".wwwwwwww...",
+        "wwwmmmwwww..",
+        "wwwwmwwww...",
+        ".wwwwwwww...",
+        "...M..M.....",
+        "..oo...oo...",
+    ],
 }
 ICON_N, ICON_U = 16, 16
 # charts read better on a card than as loose outlined dots
