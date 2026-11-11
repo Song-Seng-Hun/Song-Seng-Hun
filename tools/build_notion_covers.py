@@ -1443,6 +1443,93 @@ def scene_music_lens():
                  "front of the monitor; Claude nods along in headphones and Codex taps the beat.")
 
 
+DUCK_BODY = [   # the small duck robot from the mujoco-puzzle-gym banner
+    "....www...",
+    "...wwwww..",
+    "...wwKwwoo",
+    "...mmmmm..",
+    "....www...",
+    ".wwwwwwww.",
+    "wwwmmmwwww",
+    "wwwwmwwww.",
+    ".wwwwwwww.",
+]
+DUCK_LEGS = {"a": ["...M..M...", "..oo...oo."], "b": ["...M.M....", "...oooo..."]}
+
+
+def scene_puzzle_gym():
+    """MuJoCo Puzzle Gym: a duck robot steps on a floor switch, the gate in the wall rises and it walks to the goal."""
+    dur = 10.0
+    floor = 46                                        # the duck's feet row
+    walk1, on, gate_up, walk2, arrive, reset = (1.0, 3.0), 3.0, (3.4, 4.1), (4.4, 7.2), 7.2, 9.6
+    x_start, x_switch, x_goal = 76, 90, 142
+    s = Scene("puzzle-gym", dur, keep_clear=(48, 194))
+    c = s.base
+    c.rect(70, floor + 1, 96, 2, "path")             # room floor
+    c.rect(70, floor + 3, 96, 1, "path_e")
+    c.box(70, 20, 3, floor - 19, "metal_d")           # outer walls
+    c.box(163, 20, 3, floor - 19, "metal_d")
+    c.rect(86, floor, 14, 1, "yellow")                # floor switch
+    c.rect(138, floor, 16, 1, "blue")                 # goal pad and its pennant
+    c.rect(156, 28, 1, floor - 27, "metal")
+    c.rect(157, 28, 6, 4, "blue")
+    c.rect(158, 29, 4, 2, "dia")
+    link = [(93, y) for y in range(floor - 3, 15, -2)] + [(x, 15) for x in range(95, 121, 2)] + \
+           [(121, y) for y in range(17, 20, 2)]
+    for p in link:                                    # the signal link from the switch to the gate
+        c.set(*p, "sub")
+    lit = Canvas()                                    # the switch turns green and the link lights up
+    lit.rect(86, floor, 14, 1, "laser")
+    s.show(lit, [(on, reset)])
+    for k in range(0, len(link), 4):
+        seg = Canvas()
+        for p in link[k:k + 4]:
+            seg.set(*p, "laser")
+        s.show(seg, [(on + 0.02 * k, reset)])
+    gate = Canvas()                                   # the gate rises into the divider
+    gate.box(0, 0, 6, floor - 32, "wood")
+    for y in range(3, floor - 33, 3):
+        gate.rect(1, y, 4, 1, "wood_d")
+    s.move(gate, [(0.0, gate_up[0], (118, 33), (118, 33), "lin"), (gate_up[0], gate_up[1], (118, 33), (118, 18), "out"),
+                  (gate_up[1], reset, (118, 18), (118, 18), "lin"), (reset, dur, (118, 18), (118, 33), "in")])
+    wall = Canvas()                                   # the divider above the gate hides the raised gate
+    wall.box(117, 16, 8, 17, "metal_d")
+    wall.rect(118, 31, 6, 1, "metal")
+    s.layers.append(paths(wall))
+    # the duck: legs alternate while walking, it waits on the switch while the gate opens
+    legs = {k: on_ground(sprite(DUCK_BODY + v), 0, floor) for k, v in DUCK_LEGS.items()}
+    walking = [walk1, walk2]
+    steps = {"a": [], "b": []}
+    for a, b in walking:
+        for k, spans in zip("ab", cycle(2, a, b, 0.25)):
+            steps[k] += spans
+    still = [(0.0, walk1[0]), (walk1[1], walk2[0]), (walk2[1], dur)]
+    path = [(0.0, walk1[0], (x_start, 0), (x_start, 0), "lin"), (walk1[0], walk1[1], (x_start, 0), (x_switch, 0), "lin"),
+            (walk1[1], walk2[0], (x_switch, 0), (x_switch, 0), "lin"), (walk2[0], walk2[1], (x_switch, 0), (x_goal, 0), "lin"),
+            (walk2[1], reset, (x_goal, 0), (x_goal, 0), "lin"), (reset, dur, (x_start, 0), (x_start, 0), "lin")]
+    s.move(legs["a"], path, spans=steps["a"] + still)
+    s.move(legs["b"], path, spans=steps["b"])
+    for k, (dx, dy) in enumerate(((-4, -14), (12, -16), (-6, -6), (14, -8), (4, -19))):
+        sp = Canvas()                                 # sparkles when the duck reaches the goal
+        x, y = x_goal + 4 + dx, floor + dy
+        for ex, ey in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):
+            sp.set(x + ex, y + ey, "lit" if (ex, ey) == (0, 0) else "star")
+        t = arrive + 0.15 * k
+        s.show(sp, [(t, t + 0.5), (t + 0.9, t + 1.4)])
+    s.layers.append(shown_inner(dur, half_text("CLEAR!", 136, 21, "laser"), [(arrive + 0.2, reset)], raw=True))
+    # Claude watches from outside the room and cheers at the goal
+    calm = on_ground(claude_dj("dot", "down", 0), 174, floor + 1)
+    yay = on_ground(claude_dj("happy", "down", 1), 174, floor + 1)
+    s.timeline([(0.0, calm), (arrive, yay), (reset, calm)])
+    s.layers.append(paths(traveler(54, floor + 1)))
+    return s.svg("MuJoCo Puzzle Gym",
+                 "Pixel-art night scene: a small duck robot walks across a walled room onto a yellow floor switch; "
+                 "the switch turns green, a signal line lights up from the switch to the wooden gate in the "
+                 "dividing wall and the gate rises. The duck walks through to the blue goal pad, sparkles pop and "
+                 "CLEAR! appears. The portfolio owner stands outside on the left; Claude in headphones cheers on "
+                 "the right.")
+
+
 def scene_notes():
     """Study notes: a desk under a lamp beside a small library, with lines being written in a notebook."""
     s = Scene("notes", 6.0, trees=False)
@@ -1724,6 +1811,7 @@ SCENES = {
     "competitions": scene_competitions,
     "korean-stt": scene_korean_stt,
     "llm-music-lens": scene_music_lens,
+    "puzzle-gym": scene_puzzle_gym,
     "notes": scene_notes,
     "notes-quality": scene_quality,
     "notes-supervised": scene_supervised,
